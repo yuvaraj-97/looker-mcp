@@ -185,3 +185,12 @@ Here are the tools available, organized by category:
 
 </details>
 
+## 🧩 User Ambiguity Resolution Pattern
+
+When interacting with dashboard configurations, users often issue commands in natural language that might match multiple elements (e.g. "delete the region filter" when there are filters for "US Region" and "EU Region", or "update the chart" when there are multiple tiles/components).
+
+To ensure safe and precise operations, follow this interaction pattern:
+1. **Inspect Elements**: Fetch the dashboard's current components or filters first (e.g., calling `dashboard_dashboard_elements` or `dashboard_dashboard_filters`).
+2. **Detect Ambiguity**: If there are multiple components or filters that match the user's intent, do not guess.
+3. **Prompt the User**: Present a structured multi-choice question (using the `ask_question` tool where supported) to let the user select/multiselect the target elements.
+4. **Execute**: Perform the action specifically on the selected item IDs.
