@@ -14,13 +14,20 @@ def get_me() -> str:
     return str(me)
 
 @mcp.prompt("analyze_dashboard")
-def analyze_dashboard(dashboard_identifier: str) -> str:
-    """Start a session to analyze a specific Looker dashboard."""
-    return (
-        f"I am working with the Looker dashboard identified by: '{dashboard_identifier}'. "
-        "Please use the Looker MCP tools to locate this dashboard, retrieve its layout and underlying queries, "
-        "and help me analyze the data."
-    )
+def analyze_dashboard(dashboard_identifier: str = "") -> str:
+    """Start a session to analyze a Looker dashboard. If you leave the identifier blank, the AI will list available dashboards for you to choose from."""
+    if dashboard_identifier:
+        return (
+            f"I am working with the Looker dashboard identified by: '{dashboard_identifier}'. "
+            "Please use the Looker MCP tools to locate this dashboard, retrieve its layout and underlying queries, "
+            "and help me analyze the data."
+        )
+    else:
+        return (
+            "I want to analyze a Looker dashboard, but I don't know the exact name or ID. "
+            "Please use the Looker MCP tools to fetch a list of all available dashboards (their programmatic IDs and user-friendly titles). "
+            "Present this list to me so I can select one. Once I reply with my selection, remember it for the duration of this session and proceed to analyze it."
+        )
 
 register_looker_tools(mcp)
 
