@@ -13,6 +13,15 @@ def get_me() -> str:
     me = sdk.me()
     return str(me)
 
+@mcp.prompt("analyze_dashboard")
+def analyze_dashboard(dashboard_identifier: str) -> str:
+    """Start a session to analyze a specific Looker dashboard."""
+    return (
+        f"I am working with the Looker dashboard identified by: '{dashboard_identifier}'. "
+        "Please use the Looker MCP tools to locate this dashboard, retrieve its layout and underlying queries, "
+        "and help me analyze the data."
+    )
+
 register_looker_tools(mcp)
 
 def main():
