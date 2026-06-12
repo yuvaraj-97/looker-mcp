@@ -30,7 +30,15 @@ Add the following to your client's `mcp_servers.json` (or equivalent configurati
 }
 ```
 
-*Note: Ensure you have [`uv`](https://docs.astral.sh/uv/) installed on your machine so `uvx` can automatically run the git repository.*
+*Note: This utilizes [`uv`](https://docs.astral.sh/uv/) for zero-install execution. If you do not have `uv` installed, you have a few alternatives:*
+
+**Alternative 1: Using pipx**
+Change the command to `pipx` and the args to:
+`["run", "--spec", "git+https://github.com/yuvaraj-97/looker-mcp.git", "looker-mcp"]`
+
+**Alternative 2: Using pip (Standard Python)**
+1. Install the package globally by running: `pip install git+https://github.com/yuvaraj-97/looker-mcp.git`
+2. In your JSON config, set the `command` to `looker-mcp` and leave `args` empty (`[]`).
 
 ## Example Usage Scenario
 
