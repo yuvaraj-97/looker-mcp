@@ -1,5 +1,8 @@
+import logging
+import sys
+
 from mcp.server.fastmcp import FastMCP
-from looker_tools import register_looker_tools, get_sdk
+from looker_tools import register_looker_tools, get_sdk, serialize_result
 
 # Initialize FastMCP server
 mcp = FastMCP("Looker")
@@ -10,8 +13,7 @@ def get_me() -> str:
     sdk = get_sdk()
     if sdk is None:
         return "Looker SDK not initialized"
-    me = sdk.me()
-    return str(me)
+    return serialize_result(sdk.me())
 
 @mcp.prompt("analyze_dashboard")
 def analyze_dashboard(dashboard_identifier: str = "") -> str:
@@ -32,6 +34,8 @@ def analyze_dashboard(dashboard_identifier: str = "") -> str:
 register_looker_tools(mcp)
 
 def main():
+    # Route all logging to stderr; stdout carries the MCP JSON-RPC stream.
+    logging.basicConfig(level=logging.INFO, stream=sys.stderr)
     mcp.run(transport='stdio')
 
 if __name__ == "__main__":

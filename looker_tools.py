@@ -1,9 +1,13 @@
-import inspect
 import json
-from typing import Any, Dict
+import logging
 import looker_sdk
+from looker_sdk.rtl import serialize
+
+# Logs must go to stderr: stdout is reserved for the MCP JSON-RPC stream.
+logger = logging.getLogger("looker_mcp")
 
 sdk_instance = None
+
 
 def get_sdk():
     global sdk_instance
@@ -11,8 +15,31 @@ def get_sdk():
         try:
             sdk_instance = looker_sdk.init40()
         except Exception as e:
-            print("Warning: Looker SDK init failed:", e)
+            logger.warning("Looker SDK init failed: %s", e)
     return sdk_instance
+
+
+def serialize_result(result) -> str:
+    """Convert a Looker SDK response into a clean, LLM-friendly string.
+
+    Model objects (and lists of them) are serialized to compact JSON using the
+    SDK's own cattrs converter, which recurses nested models, handles enums and
+    datetimes, and omits null fields. Raw string payloads (e.g. JSON/CSV from
+    run_query) are returned as-is; binary payloads are summarized.
+    """
+    if isinstance(result, str):
+        return result
+    if isinstance(result, bytes):
+        try:
+            return result.decode("utf-8")
+        except UnicodeDecodeError:
+            return f"<binary payload: {len(result)} bytes>"
+    try:
+        data = serialize.converter40.unstructure(result)
+        return json.dumps(data, default=lambda o: o.__dict__, ensure_ascii=False)
+    except Exception:
+        # Fallback for anything the converter can't handle.
+        return str(result)
 
 def register_looker_tools(mcp):
     import os
@@ -20,14 +47,16 @@ def register_looker_tools(mcp):
     def initialize_looker_credentials(base_url: str, client_id: str, client_secret: str) -> str:
         """Use this tool to configure the Looker SDK dynamically if the user has not set credentials in their environment.
         Call this tool with the user's provided base URL and API keys before calling other endpoints."""
-        os.environ["LOOKER_BASE_URL"] = base_url
-        os.environ["LOOKER_CLIENT_ID"] = client_id
-        os.environ["LOOKER_CLIENT_SECRET"] = client_secret
+        # The Looker SDK reads credentials from LOOKERSDK_*-prefixed env vars.
+        os.environ["LOOKERSDK_BASE_URL"] = base_url
+        os.environ["LOOKERSDK_CLIENT_ID"] = client_id
+        os.environ["LOOKERSDK_CLIENT_SECRET"] = client_secret
         global sdk_instance
         try:
             sdk_instance = looker_sdk.init40()
             return "Successfully initialized Looker SDK! You can now use the other tools."
         except Exception as e:
+            logger.warning("initialize_looker_credentials failed: %s", e)
             return f"Failed to initialize Looker SDK: {e}"
 
     def dispatch(endpoint_name, arguments):
@@ -35,14 +64,27 @@ def register_looker_tools(mcp):
         if sdk is None:
             return "Looker SDK not initialized. Please configure credentials."
         method = getattr(sdk, endpoint_name, None)
-        if not method: return f"Error: Endpoint {endpoint_name} not found."
+        if not method:
+            return f"Error: Endpoint {endpoint_name} not found."
+        # Tolerate clients that pass arguments as a JSON string or omit them.
+        if arguments is None:
+            arguments = {}
+        elif isinstance(arguments, str):
+            try:
+                arguments = json.loads(arguments) if arguments.strip() else {}
+            except json.JSONDecodeError as e:
+                return f"Error: 'arguments' must be a JSON object: {e}"
+        if not isinstance(arguments, dict):
+            return "Error: 'arguments' must be a JSON object (dict)."
         try:
             result = method(**arguments)
-            if hasattr(result, '__dict__'): return str(result.__dict__)
-            elif isinstance(result, list): return str([r.__dict__ if hasattr(r, '__dict__') else str(r) for r in result])
-            return str(result)
+            return serialize_result(result)
+        except TypeError as e:
+            # Most often a bad/missing argument for the endpoint.
+            return f"Error calling {endpoint_name}: {e}"
         except Exception as e:
-            return f"Looker API Error: {str(e)}"
+            logger.warning("Looker API error on %s: %s", endpoint_name, e)
+            return f"Looker API Error: {e}"
 
     @mcp.tool(name="looker_dashboards")
     def looker_dashboards(endpoint_name: str, arguments: dict) -> str:
