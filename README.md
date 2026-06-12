@@ -32,6 +32,25 @@ Add the following to your client's `mcp_servers.json` (or equivalent configurati
 
 *Note: Ensure you have [`uv`](https://docs.astral.sh/uv/) installed on your machine so `uvx` can automatically run the git repository.*
 
+## Example Usage Scenario
+
+Once the Looker MCP server is connected to your AI assistant, you can ask the AI to perform complex data workflows naturally. Here are some examples of what you can say:
+
+**Prompt 1: "Find the Q3 Sales dashboard and give me a summary of the data."**
+1. The AI uses the `search_dashboards(title="Q3 Sales")` tool to get the dashboard ID.
+2. The AI uses the `dashboard(dashboard_id="...")` tool to retrieve the dashboard details and underlying query IDs.
+3. The AI runs `run_query(query_id="...", result_format="json")` to extract the raw data and then writes a natural language summary for you!
+
+**Prompt 2: "Create a new user for John Doe and add them to the Marketing group."**
+1. The AI calls `create_user(body={"first_name": "John", "last_name": "Doe"})`.
+2. The AI searches for the Marketing group using `search_groups(name="Marketing")`.
+3. The AI assigns the user using `add_group_user(group_id="...", body={"user_id": "..."})`.
+
+**Prompt 3: "List all broken looks or queries that failed recently."**
+1. The AI might query `all_looks()` and check their status, or look into the system activity queries to find recently failed query tasks using `all_query_tasks()`.
+
+Because the AI has access to **every single endpoint** Looker provides, the possibilities are nearly limitless!
+
 ## Manual Setup (Local Development)
 
 If you'd like to run it locally or contribute:
