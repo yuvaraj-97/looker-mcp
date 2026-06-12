@@ -15,6 +15,21 @@ def get_sdk():
     return sdk_instance
 
 def register_looker_tools(mcp):
+    import os
+    @mcp.tool(name="initialize_looker_credentials")
+    def initialize_looker_credentials(base_url: str, client_id: str, client_secret: str) -> str:
+        """Use this tool to configure the Looker SDK dynamically if the user has not set credentials in their environment.
+        Call this tool with the user's provided base URL and API keys before calling other endpoints."""
+        os.environ["LOOKER_BASE_URL"] = base_url
+        os.environ["LOOKER_CLIENT_ID"] = client_id
+        os.environ["LOOKER_CLIENT_SECRET"] = client_secret
+        global sdk_instance
+        try:
+            sdk_instance = looker_sdk.init40()
+            return "Successfully initialized Looker SDK! You can now use the other tools."
+        except Exception as e:
+            return f"Failed to initialize Looker SDK: {e}"
+
     def dispatch(endpoint_name, arguments):
         sdk = get_sdk()
         if sdk is None:

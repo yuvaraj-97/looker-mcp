@@ -1,6 +1,6 @@
 # Looker MCP Server
 
-A Model Context Protocol (MCP) server for Looker, utilizing the official [Looker Python SDK](https://github.com/looker-open-source/sdk-codegen/tree/main/python).
+A Model Context Protocol (MCP) server for Looker.
 
 This server dynamically provides **all 483 Looker API methods** as tools for your favorite MCP client!
 
@@ -80,6 +80,8 @@ If you'd like to run it locally or contribute:
    ```bash
    looker-mcp
    ```
+
+*(Note: This MCP server utilizes the official [Looker Python SDK](https://github.com/looker-open-source/sdk-codegen/tree/main/python) under the hood to ensure 100% compliance with API specifications.)*
 
 ## ⚡ Middle-Ground Optimization
 
