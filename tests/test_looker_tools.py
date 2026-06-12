@@ -40,7 +40,7 @@ def test_invalid_endpoint_call(registered_mcp):
             break
             
     assert tool_func is not None
-    result = tool_func("invalid_endpoint", {})
+    result = tool_func(action="call", endpoint="invalid_endpoint", body={})
     assert "Error: Invalid endpoint for this category" in result
 
 @patch('looker_tools.get_sdk')
@@ -53,7 +53,7 @@ def test_valid_endpoint_call(mock_get_sdk, registered_mcp, mock_sdk):
             tool_func = t.fn
             break
             
-    result = tool_func("all_dashboards", {"limit": 10})
+    result = tool_func(action="call", endpoint="all_dashboards", body={"limit": 10})
     
     mock_sdk.all_dashboards.assert_called_once_with(limit=10)
     assert "Test Dashboard" in result
@@ -106,7 +106,7 @@ def test_dispatch_accepts_json_string_arguments(mock_get_sdk, registered_mcp, mo
     mock_get_sdk.return_value = mock_sdk
     tool_func = _get_tool(registered_mcp, "looker_dashboards")
     # client passes arguments as a JSON string instead of a dict
-    tool_func("all_dashboards", '{"limit": 5}')
+    tool_func(action="call", endpoint="all_dashboards", body='{"limit": 5}')
     mock_sdk.all_dashboards.assert_called_once_with(limit=5)
 
 
@@ -114,5 +114,15 @@ def test_dispatch_accepts_json_string_arguments(mock_get_sdk, registered_mcp, mo
 def test_dispatch_rejects_malformed_arguments(mock_get_sdk, registered_mcp, mock_sdk):
     mock_get_sdk.return_value = mock_sdk
     tool_func = _get_tool(registered_mcp, "looker_dashboards")
-    result = tool_func("all_dashboards", "not-json")
+    result = tool_func(action="call", endpoint="all_dashboards", body="not-json")
     assert "must be a JSON object" in result
+
+
+def test_describe_action(registered_mcp):
+    tool_func = _get_tool(registered_mcp, "looker_dashboards")
+    assert tool_func is not None
+    result = tool_func(action="describe")
+    parsed = json.loads(result)
+    assert isinstance(parsed, list)
+    all_dashboards_info = next(item for item in parsed if item["name"] == "all_dashboards")
+    assert "params" in all_dashboards_info
