@@ -15,5 +15,8 @@ def get_me() -> str:
 
 register_looker_tools(mcp)
 
-if __name__ == "__main__":
+def main():
     mcp.run(transport='stdio')
+
+if __name__ == "__main__":
+    main()
